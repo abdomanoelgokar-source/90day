@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رحلة الـ 90 يوم لليوم الناجح والترفيه</title>
+    <!-- استدعاء مكتبة Confetti (مرفوعة مع دعم الكاش) -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-hover: #059669;
+            --bg-color: #0b0f19;
+            --card-bg: #111827;
+            --card-border: #1f2937;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --accent-purple: #8b5cf6;
+            --accent-blue: #3b82f6;
+            --accent-pink: #ec4899;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 680px;
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 20px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        header h1 {
+            font-size: 1.35rem;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        /* حالة الاتصال بالإنترنت */
+        .offline-banner {
+            background: #b91c1c;
+            color: white;
+            text-align: center;
+            font-size: 0.75rem;
+            padding: 4px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        /* شريط الأيام (الـ 90 يوم) */
+        .days-bar {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+            scrollbar-width: thin;
+        }
+
+        .day-btn {
+            background: #111827;
+            border: 1px solid var(--card-border);
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            border-radius: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .day-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* شريط التقدم الإجمالي */
+        .stats-card {
+            background: #0f172a;
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+
+        .progress-container {
+            background-color: #1e293b;
+            border-radius: 999px;
+            height: 8px;
+            width: 100%;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--primary), var(--accent-blue));
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .day-phase-badge {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--primary);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        /* أقسام المهام */
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin: 16px 0 8px 0;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tasks-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: #0f172a;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+
+        .task-item.completed {
+            background-color: #064e3b;
+            border-color: #059669;
+        }
+
+        .task-left {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .task-item input[type="checkbox"] {
+            margin-top: 3px;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .task-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .task-item.completed .task-title {
+            text-decoration: line-through;
+            color: #a7f3d0;
+        }
+
+        .task-subline {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .task-item.completed .task-subline {
+            color: #6ee7b7;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .delete-btn:hover { background: rgba(239, 68, 68, 0.15); }
+
+        /* نموذج إضافة مهمة مخصصة */
+        .add-task-box {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .add-task-box input {
+            flex: 1;
+            padding: 8px 12px;
+            background: #0f172a;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.82rem;
+            outline: none;
+        }
+
+        .add-task-box input:focus { border-color: var(--primary); }
+        
+        .add-task-box button {
+            background: var(--accent-blue);
+            color: #fff;
+            border: none;
+            padding: 0 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.82rem;
+        }
+
+        /* صندوق مكافأة الدوبامين والترفيه اليومي */
+        .dopamine-box {
+            margin-top: 20px;
+            background: linear-gradient(135deg, #1e1b4b, #311042);
+            border: 1px solid var(--accent-purple);
+            border-radius: 14px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .dopamine-box h3 {
+            font-size: 1rem;
+            color: #c084fc;
+            margin-bottom: 6px;
+        }
+
+        .dopamine-box p {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .reward-btn {
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-pink));
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .reward-btn:hover:not(:disabled) { transform: scale(1.03); }
+
+        .reward-btn:disabled {
+            background: #4b5563;
+            cursor: not-allowed;
+            opacity: 0.6;
+            box-shadow: none;
+        }
+
+        .reset-btn {
+            block-size: auto;
+            display: block;
+            margin: 16px auto 0;
+            background: none;
+            border: 1px dashed var(--text-muted);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            font-size: 0.7rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .reset-btn:hover { color: var(--danger); border-color: var(--danger); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="offline-banner" class="offline-banner">أنت تعمل الآن بدون إنترنت (الوضع غير المتصل مفعل)</div>
+        <header>
+            <h1>🎯 رحلة الـ 90 يوم لليوم الناجح والترفيه</h1>
+            <p>نظام متطور يتغير ويتطور معك يوماً بيوم (يعمل بدون نت!)</p>
+        </header>
+
+        <!-- شريط الأيام (الـ 90 يوم) -->
+        <div class="days-bar" id="days-bar"></div>
+
+        <!-- معلومات المرحلة الحالية -->
+        <div id="badge-container"></div>
+
+        <!-- مؤشر الإنجاز العام -->
+        <div class="stats-card">
+            <div class="progress-text">
+                <span id="progress-label">إنجاز اليوم: 0%</span>
+                <span id="overall-count">0 من 0 مهام مكتملة</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+        </div>
+
+        <!-- 1. الصلوات الخمس -->
+        <div class="section-title">🕌 الصلوات الخمس في أوقاتها</div>
+        <ul class="tasks-list" id="prayers-list"></ul>
+
+        <!-- 2. المذاكرة والكلية (الأساس المتطور) -->
+        <div class="section-title">📖 المذاكرة والتحصيل الدراسي</div>
+        <ul class="tasks-list" id="study-list"></ul>
+
+        <!-- 3. المشاكرة والرياضة والتعافي -->
+        <div class="section-title">🏋️ الروتين الرياضي والتعافي</div>
+        <ul class="tasks-list" id="habits-list"></ul>
+
+        <!-- 4. إنجليزي خفيف -->
+        <div class="section-title">🇬🇧 جرعة إنجليزي خفيفة (15 دقيقة)</div>
+        <ul class="tasks-list" id="english-list"></ul>
+
+        <!-- إضافة مهمة مخصصة -->
+        <div class="section-title" style="font-size: 0.85rem;">➕ إضافة مهمة خاصة بك اليوم</div>
+        <form class="add-task-box" onsubmit="addCustomTask(event)">
+            <input type="text" id="custom-task-input" placeholder="اكتب مهمة إضافية لليوم..." required autocomplete="off">
+            <button type="submit">إضافة</button>
+        </form>
+        <ul class="tasks-list" id="custom-list" style="margin-top: 8px;"></ul>
+
+        <!-- صندوق مكافأة الدوبامين والترفيه اليومي -->
+        <div class="dopamine-box">
+            <h3>🎮 ترفيه الدوبامين اليومي (المكافأة)</h3>
+            <p id="reward-status">أنجز 80% من مهامك لفتح جلسة الترفيه واستلام مكافأتك!</p>
+            <button class="reward-btn" id="claim-btn" onclick="claimReward()" disabled>فتح ترفيه اليوم 🚀</button>
+        </div>
+
+        <button class="reset-btn" onclick="resetAll()">إعادة تعيين التقدم بالكامل</button>
+    </div>
+
+    <script>
+        // تسجيل الـ Service Worker عشان الموقع يفتح من غير نت
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swCode = `
+                    const CACHE_NAME = 'success-hub-v1';
+                    const urlsToCache = ['./', './index.html', 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js'];
+                    
+                    self.addEventListener('install', e => {
+                        e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)));
+                    });
+                    
+                    self.addEventListener('fetch', e => {
+                        e.respondWith(caches.match(e.request).then(response => response || fetch(e.request)));
+                    });
+                `;
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+                navigator.serviceWorker.register(swUrl).catch(err => console.log('SW registration failed', err));
+            });
+        }
+
+        // مراقبة حالة الإنترنت
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        function updateOnlineStatus() {
+            const banner = document.getElementById('offline-banner');
+            if (!navigator.onLine) {
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+        updateOnlineStatus();
+
+        const daysData = [];
+        for (let i = 1; i <= 90; i++) {
+            let dayTitle = `اليوم ${i}: الثبات والاستمرار`;
+            let phaseName = "";
+            let studyTaskLabel = "جلسة المذاكرة الأساسية (محاضرات / مواد اليوم)";
+            let studySubline = "التركيز العميق وإنجاز المهام الدراسية";
+            let habitSubline = "النزول للجيم أو التمرين بقوة";
+
+            if (i >= 1 && i <= 7) {
+                phaseName = "المرحلة الأولى: أسبوع الصدمة وسحب النيكوتين (الأصعب)";
+                if(i === 1) dayTitle = "اليوم الأول: نقطة الصفر والانطلاق";
+                else dayTitle = `اليوم ${i}: مقاومة الأعراض الانسحابية`;
+                studyTaskLabel = "مذاكرة خفيفة وتصفية الذهن (ساعة واحدة)";
+            } else if (i >= 8 && i <= 30) {
+                phaseName = "المرحلة الثانية: بناء العادات والتركيز الدراسي (الشهر الأول)";
+                if(i === 7) dayTitle = "اليوم السابع: حصاد الأسبوع الأول بسلام";
+                else if(i === 30) dayTitle = "اليوم الثلاثون: إنجاز الشهر الأول وبداية الاحتراف";
+                studyTaskLabel = "جلسة المذاكرة الأساسية المكثفة (محاضرات اليوم)";
+                habitSubline = "تمرين قوي ورفع كفاءة اللياقة البدنية";
+            } else if (i >= 31 && i <= 60) {
+                phaseName = "المرحلة الثالثة: القوة والتعافي المستقر (الشهر الثاني)";
+                if(i === 60) dayTitle = "اليوم الستين: شهرين من الانضباط الكامل";
+                studyTaskLabel = "مذاكرة متقدمة وحل تطبيقات ومسائل";
+                habitSubline = "تمرين شاق وتغذية صحية سليمة";
+            } else {
+                phaseName = "المرحلة الرابعة: التثبيت والوصول للقمة (الشهر الثالث)";
+                if(i === 90) dayTitle = "اليوم التسعون: خط النهاية وبطل جديد بالكامل";
+                studyTaskLabel = "مراجعة شاملة وثبات دراسي تام";
+                habitSubline = "الحفاظ على قوام رياضي ممتاز ولياقة عالية";
+            }
+
+            daysData.push({
+                dayNum: i,
+                title: dayTitle,
+                phase: phaseName,
+                prayers: [
+                    { id: `d${i}_pr1`, label: "صلاة الفجر في وقتها", sublines: "بداية اليوم ببركة وتوفيق" },
+                    { id: `d${i}_pr2`, label: "صلاة الظهر في وقتها", sublines: "استراحة روحانية وسط اليوم" },
+                    { id: `d${i}_pr3`, label: "صلاة العصر في وقتها", sublines: "الحفاظ على الصلاة الوسطى" },
+                    { id: `d${i}_pr4`, label: "صلاة المغرب في وقتها", sublines: "مع غروب الشمس" },
+                    { id: `d${i}_pr5`, label: "صلاة العشاء في وقتها", sublines: "ختام يومك بطاعة" }
+                ],
+                study: [
+                    { id: `d${i}_st1`, label: studyTaskLabel, sublines: studySubline },
+                    { id: `d${i}_st2`, label: "مراجعة وتلخيص ما تم دراسته اليوم", sublines: "تثبيت المعلومات في الذاكرة طويلة المدى" }
+                ],
+                habits: [
+                    { id: `d${i}_hb1`, label: "التمارين أو المشاكرة الرياضية الأساسية", sublines: habitSubline },
+                    { id: `d${i}_hb2`, label: "يوم نظيف بدون سجائر نهائياً", sublines: "الالتزام التام بالتعافي وصحتك البدنية" },
+                    { id: `d${i}_hb3`, label: "شرب 3 لتر مياه لتطهير الجسم والنشاط", sublines: "الحفاظ على ترطيب الجسم وحيوية الخلايا" }
+                ],
+                english: [
+                    { id: `d${i}_en1`, label: "15 دقيقة إنجليزي خفيفة (كلمات جديدة أو فيديو)", sublines: "تواصل بسيط مع اللغة بدون ضغط" }
+                ]
+            });
+        }
+
+        let activeDay = 0;
+        let userProgress = JSON.parse(localStorage.getItem('success_hub_90d_prog_v4')) || {};
+        let customTasks = JSON.parse(localStorage.getItem('success_hub_90d_custom_v4')) || {};
+
+        const daysBar = document.getElementById('days-bar');
+        const badgeContainer = document.getElementById('badge-container');
+        const prayersList = document.getElementById('prayers-list');
+        const studyList = document.getElementById('study-list');
+        const habitsList = document.getElementById('habits-list');
+        const englishList = document.getElementById('english-list');
+        const customList = document.getElementById('custom-list');
+        const progressBar = document.getElementById('progress-bar');
+        const progressLabel = document.getElementById('progress-label');
+        const overallCountText = document.getElementById('overall-count');
+        const newTaskInput = document.getElementById('custom-task-input');
+
+        function initDays() {
+            daysBar.innerHTML = '';
+            daysData.forEach((day, index) => {
+                const btn = document.createElement('button');
+                btn.className = `day-btn ${index === activeDay ? 'active' : ''}`;
+                btn.textContent = `يوم ${day.dayNum}`;
+                btn.onclick = () => {
+                    activeDay = index;
+                    initDays();
+                    renderDay();
+                };
+                daysBar.appendChild(btn);
+            });
+            const activeBtn = daysBar.children[activeDay];
+            if(activeBtn) {
+                daysBar.scrollLeft = activeBtn.offsetLeft - daysBar.offsetWidth / 2 + activeBtn.offsetWidth / 2;
+            }
+        }
+
+        function renderDay() {
+            const current = daysData[activeDay];
+            const dayCustoms = customTasks[current.dayNum] || [];
+
+            badgeContainer.innerHTML = `<div class="day-phase-badge">${current.phase}</div>`;
+
+            renderCategory(prayersList, current.prayers);
+            renderCategory(studyList, current.study);
+            renderCategory(habitsList, current.habits);
+            renderCategory(englishList, current.english);
+            renderCustomCategory(customList, dayCustoms);
+            updateStats();
+        }
+
+        function renderCategory(listEl, items) {
+            listEl.innerHTML = '';
+            items.forEach(task => {
+                const isChecked = !!userProgress[task.id];
+                const li = document.createElement('li');
+                li.className = `task-item ${isChecked ? 'completed' : ''}`;
+                li.innerHTML = `
+                    <div class="task-left" onclick="toggleTask('${task.id}')">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleTask('${task.id}')">
+                        <div>
+                            <div class="task-title">${task.label}</div>
+                            <div class="task-subline">${task.sublines}</div>
+                        </div>
+                    </div>
+                `;
+                listEl.appendChild(li);
+            });
+        }
+
+        function renderCustomCategory(listEl, items) {
+            listEl.innerHTML = '';
+            items.forEach(task => {
+                const isChecked = !!userProgress[task.id];
+                const li = document.createElement('li');
+                li.className = `task-item ${isChecked ? 'completed' : ''}`;
+                li.innerHTML = `
+                    <div class="task-left" onclick="toggleTask('${task.id}')">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleTask('${task.id}')">
+                        <div>
+                            <div class="task-title">${task.label}</div>
+                            <div class="task-subline">مهمة مخصصة لليوم</div>
+                        </div>
+                    </div>
+                    <button class="delete-btn" onclick="deleteCustomTask('${task.id}')">🗑️</button>
+                `;
+                listEl.appendChild(li);
+            });
+        }
+
+        function toggleTask(id) {
+            userProgress[id] = !userProgress[id];
+            if (userProgress[id]) {
+                confetti({ particleCount: 30, spread: 45, origin: { y: 0.8 } });
+            }
+            localStorage.setItem('success_hub_90d_prog_v4', JSON.stringify(userProgress));
+            renderDay();
+        }
+
+        function addCustomTask(e) {
+            e.preventDefault();
+            const val = newTaskInput.value.trim();
+            if(!val) return;
+
+            const dayNum = daysData[activeDay].dayNum;
+            const taskId = `custom_${dayNum}_${Date.now()}`;
+            const newTask = { id: taskId, label: val };
+
+            if(!customTasks[dayNum]) customTasks[dayNum] = [];
+            customTasks[dayNum].push(newTask);
+
+            localStorage.setItem('success_hub_90d_custom_v4', JSON.stringify(customTasks));
+            newTaskInput.value = '';
+            renderDay();
+        }
+
+        function deleteCustomTask(id) {
+            const dayNum = daysData[activeDay].dayNum;
+            if(customTasks[dayNum]) {
+                customTasks[dayNum] = customTasks[dayNum].filter(t => t.id !== id);
+                localStorage.setItem('success_hub_90d_custom_v4', JSON.stringify(customTasks));
+            }
+            if(userProgress[id]) {
+                delete userProgress[id];
+                localStorage.setItem('success_hub_90d_prog_v4', JSON.stringify(userProgress));
+            }
+            renderDay();
+        }
+
+        function updateStats() {
+            const current = daysData[activeDay];
+            const dayCustoms = customTasks[current.dayNum] || [];
+
+            let allDayTasks = [
+                ...current.prayers,
+                ...current.study,
+                ...current.habits,
+                ...current.english,
+                ...dayCustoms
+            ];
+
+            let total = allDayTasks.length;
+            let completed = allDayTasks.filter(t => userProgress[t.id]).length;
+            let pct = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+            progressBar.style.width = `${pct}%`;
+            progressLabel.textContent = `إنجاز اليوم: ${pct}%`;
+            overallCountText.textContent = `${completed} من ${total} مهام مكتملة`;
+
+            const claimBtn = document.getElementById('claim-btn');
+            const rewardStatus = document.getElementById('reward-status');
+            if (pct >= 80 && total > 0) {
+                claimBtn.disabled = false;
+                rewardStatus.textContent = "🔥 عظيم يا بطل! تم فتح جلسة الترفيه، استمتع بوقتاً ممتعاً ومستحق!";
+            } else {
+                claimBtn.disabled = true;
+                rewardStatus.textContent = "أنجز 80% على الأقل من مهامك لفتح جائزة الترفيه اليومية";
+            }
+        }
+
+        function claimReward() {
+            confetti({ particleCount: 120, spread: 90, origin: { y: 0.5 } });
+            alert("🎮 كفو يا بطل الإنجاز! وقت الترفيه فتح رسمياً: استمتع بحلقة مسلسل، لعبة خفيفة، أو خروجة رايقة وأنت مرتاح الضمير 100%!");
+        }
+
+        function resetAll() {
+            if(confirm("هل تريد إعادة تعيين كافة التقدم والمهام للـ 90 يوم؟")) {
+                userProgress = {};
+                customTasks = {};
+                localStorage.removeItem('success_hub_90d_prog_v4');
+                localStorage.removeItem('success_hub_90d_custom_v4');
+                renderDay();
+            }
+        }
+
+        initDays();
+        renderDay();
+    </script>
+</body>
+</html>
